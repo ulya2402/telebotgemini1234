@@ -1,0 +1,5 @@
+aiogram==3.* 
+python-dotenv==1.*
+ google-generativeai>=0.7.0
+supabase==1.* 
+aiogram
