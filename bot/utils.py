@@ -3,7 +3,7 @@ from aiogram.filters.base import Filter
 from aiogram.types import Message
 from typing import Union, List as TypingList, Set as TypingSet
 
-_ESCAPE_MD_V1_CHARS = r'_*`[' 
+_ESCAPE_MD_V1_CHARS = r'_*`['
 
 def local_escape_markdown_v1(text: str) -> str:
     if not isinstance(text, str):
@@ -27,10 +27,6 @@ class ManualChatTypeFilter(Filter):
 
 
 def split_long_message(text: str, max_length: int) -> TypingList[str]:
-    """
-    Memecah teks panjang menjadi beberapa bagian yang lebih kecil,
-    mencoba memecah pada baris baru jika memungkinkan.
-    """
     if not text:
         return []
 
@@ -47,16 +43,16 @@ def split_long_message(text: str, max_length: int) -> TypingList[str]:
         split_at = -1
 
         rfind_double_newline = text.rfind('\n\n', current_pos, end_pos)
-        if rfind_double_newline > current_pos: 
-            split_at = rfind_double_newline + 2 
+        if rfind_double_newline > current_pos:
+            split_at = rfind_double_newline + 2
         else:
             rfind_single_newline = text.rfind('\n', current_pos, end_pos)
             if rfind_single_newline > current_pos:
-                split_at = rfind_single_newline + 1 
+                split_at = rfind_single_newline + 1
             else:
                 rfind_space = text.rfind(' ', current_pos, end_pos)
                 if rfind_space > current_pos:
-                    split_at = rfind_space + 1 
+                    split_at = rfind_space + 1
                 else:
                     split_at = end_pos
 
@@ -67,3 +63,42 @@ def split_long_message(text: str, max_length: int) -> TypingList[str]:
             current_pos += 1
 
     return [chunk for chunk in chunks if chunk]
+
+def ensure_valid_markdown(text: str) -> str:
+    stack = []
+    result = []
+    i = 0
+
+    single_char_symbols = {'*', '`', '~'}
+    multi_char_symbols = {'```'}
+
+    while i < len(text):
+        if text[i:i + 3] in multi_char_symbols:
+            if stack and stack[-1] == '```':
+                stack.pop()
+                result.append('```')
+                i += 3
+            else:
+                stack.append('```')
+                result.append('```')
+                i += 3
+        elif text[i] in single_char_symbols:
+            if stack and stack[-1] == text[i]:
+                stack.pop()
+                result.append(text[i])
+            else:
+                stack.append(text[i])
+                result.append(text[i])
+            i += 1
+        else:
+            result.append(text[i])
+            i += 1
+
+    while stack:
+        unmatched = stack.pop()
+        if unmatched == '```':
+            result.append('```')
+        else:
+            result.append(unmatched)
+
+    return ''.join(result)
